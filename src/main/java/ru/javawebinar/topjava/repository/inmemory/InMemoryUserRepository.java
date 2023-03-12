@@ -6,11 +6,10 @@ import org.springframework.stereotype.Repository;
 import ru.javawebinar.topjava.model.User;
 import ru.javawebinar.topjava.repository.UserRepository;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Repository
 public class InMemoryUserRepository implements UserRepository {
@@ -23,7 +22,8 @@ public class InMemoryUserRepository implements UserRepository {
     @Override
     public boolean delete(int id) {
         log.info("delete {}", id);
-        return true;
+
+        return userRepository.remove(id) != null;
     }
 
     @Override
@@ -31,26 +31,35 @@ public class InMemoryUserRepository implements UserRepository {
         log.info("save {}", user);
         if (user.isNew()){
             user.setId(counter.incrementAndGet());
+            userRepository.put(user.getId(), user);
+            return user;
         }
-        userRepository.put(user.getId(), user);
-        return user;
+
+        return userRepository.computeIfPresent(user.getId(),(id, oldUser)->user);
     }
 
     @Override
     public User get(int id) {
+
         log.info("get {}", id);
-        return null;
+        return userRepository.get(id);
     }
 
     @Override
     public List<User> getAll() {
         log.info("getAll");
-        return Collections.emptyList();
+        return  userRepository.values().stream()
+                .sorted(Comparator.comparing(User::getName)).toList();
     }
 
     @Override
     public User getByEmail(String email) {
         log.info("getByEmail {}", email);
-        return null;
+        List<User> users = userRepository.values().stream().toList();
+        List<User> collect = users.stream()
+                .filter(user -> Objects.equals(user.getEmail(), email))
+                .collect(Collectors.toList());
+
+        return collect.get(0);
     }
 }

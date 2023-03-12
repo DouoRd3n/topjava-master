@@ -33,6 +33,9 @@ public class User extends AbstractNamedEntity {
         this.roles = roles;
     }
 
+    public String getName(){
+       return super.getName();
+    }
     public String getEmail() {
         return email;
     }
